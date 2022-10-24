@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:snappy_list_view/snappy_list_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -58,14 +59,15 @@ class _MyHomePageState extends State<MyHomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: <Widget>[
           Expanded(
-            child: AdvancedListView(
+            child: SnappyListView(
               reverse: reverse,
               controller: controller,
               itemCount: yourContentList.length,
               itemSnapping: true,
-              //physics: const CustomPageViewScrollPhysics(),
-              //overscrollPhysics: const PageOverscrollPhysics(velocityPerOverscroll: 1200),
-              visualisation: ListVisualisation.wheel(),
+              physics: const CustomPageViewScrollPhysics(),
+              overscrollPhysics:
+                  const PageOverscrollPhysics(velocityPerOverscroll: 1200),
+              //visualisation: ListVisualisation.wheel(),
               itemBuilder: (context, index) {
                 final currentSnappyWidget = yourContentList.elementAt(index);
                 return Card(

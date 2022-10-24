@@ -1,39 +1,38 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+[![pub package](https://img.shields.io/pub/v/snappy_list_view.svg)](https://pub.dev/packages/snappy_list_view)
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
+SnappyListView provides you with everything to make your list snap to each element - essentially 
+like a PageView widget, but while displaying every element in a list format. This means that
+this widget also enables you to have **different sizes of items**. Main features include:
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
+ - **Different and variable sizes of items** in both scroll- and orthogonal direction size
+ - Snapping to each item
+ - Configurable overscroll snapping physics (overscroll multiple pages when high velocity) 
+ - List visualisation (customize or choose out of a range functions, such as wheel, carousel, or perspective)
+ - Simply use a `PageController` to get feedback and control your list
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+**Important Note:** This widget behaves just like a PageView widget. 
+Meaning that any usage in a Column, Stack or else where equals the usage of a PageView. 
 
 ## Features
-
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+ 
+*This is a beta version of this plugin, no visual features are yet available*
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
-
 ```dart
-const like = 'sample';
+SnappyListView(
+  itemCount: Colors.accents.length,
+  itemBuilder: (context, index) {
+    return Container(
+        height: 100,
+        color: Colors.accents.elementAt(index),
+        child: Text("Index: $index"),
+    ),
+);
 ```
+
+Tip: full interactive example in `./example` folder.
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+Contributions are very welcome and are merged after testing within hours.
