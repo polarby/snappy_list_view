@@ -340,7 +340,8 @@ class _SnappyListViewState extends State<SnappyListView> {
 
   int get firstIndex => widget.reverse ? widget.itemCount - 1 : 0;
 
-  double get page => widget.controller.page ?? 0;
+  double get page =>
+      widget.controller.hasClients ? widget.controller.page ?? 0 : 0;
 
   double get maxScrollDirectionSize =>
       isVerticalScroll ? viewportSize.height : viewportSize.width;

@@ -1,6 +1,6 @@
 name: snappy_list_view
 description: Add snap to your ListView, while supporting dynamic item sizes.
-version: 0.0.1
+version: 0.0.2
 homepage: https://github.com/polarby/snappy_list_view
 
 environment:
