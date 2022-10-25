@@ -181,7 +181,6 @@ class _SnappyListViewState extends State<SnappyListView> {
     currentIndex = currentIndex.clamp(0, widget.itemCount);
     //sync list after rebuild to adapt for item changes (size or deletion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      print("initialSizes: ${initialSizes}");
       if (mounted) syncList();
       if (initialSizes.isNotEmpty && initialBuild) initialBuild = false;
     });

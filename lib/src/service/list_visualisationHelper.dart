@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:matrix4_transform/matrix4_transform.dart';
 
 class ListVisualisationParameters {
   final Duration duration;
@@ -33,6 +32,8 @@ class VisualisationItem {
     required this.maxScrollDirectionSize,
     required this.orthogonalScrollDirectionSize,
   });
+
+  bool get isCurrent => pageDifference.abs() <= 0.5;
 
   bool get isInBuilderSizes => builderSizes.containsKey(itemIndex);
 

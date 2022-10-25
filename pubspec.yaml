@@ -1,6 +1,6 @@
 name: snappy_list_view
 description: Add snap to your ListView, while supporting dynamic item sizes.
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/polarby/snappy_list_view
 
 environment:
@@ -18,7 +18,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^2.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

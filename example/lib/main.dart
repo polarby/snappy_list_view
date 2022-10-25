@@ -65,9 +65,8 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: yourContentList.length,
               itemSnapping: true,
               physics: const CustomPageViewScrollPhysics(),
-              overscrollPhysics:
-                  const PageOverscrollPhysics(velocityPerOverscroll: 1200),
-              //visualisation: ListVisualisation.wheel(),
+              overscrollPhysics: const PageOverscrollPhysics(velocityPerOverscroll: 1200),
+              visualisation: ListVisualisation.enlargement(),
               itemBuilder: (context, index) {
                 final currentSnappyWidget = yourContentList.elementAt(index);
                 return Card(

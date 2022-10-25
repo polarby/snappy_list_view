@@ -3,46 +3,74 @@ import 'package:flutter/rendering.dart';
 
 ///A custom stack widget that allows all its children to be tapped
 ///A normal stack widget would only allow the first widget to receive any hits.
-///This widget was created by https://stackoverflow.com/a/69471450/11003497
+///This widget was created by https://stackoverflow.com/a/73494415/11003497
 class MultiHitStack extends Stack {
-  MultiHitStack({super.key, children}) : super(children: children);
+  MultiHitStack({
+    super.key,
+    super.alignment = AlignmentDirectional.topStart,
+    super.textDirection,
+    super.fit = StackFit.loose,
+    super.clipBehavior = Clip.hardEdge,
+    super.children = const <Widget>[],
+  });
 
   @override
-  CustomRenderStack createRenderObject(BuildContext context) {
-    return CustomRenderStack(
+  RenderMultiHitStack createRenderObject(BuildContext context) {
+    return RenderMultiHitStack(
       alignment: alignment,
-      textDirection: textDirection ?? Directionality.of(context),
+      textDirection: textDirection ?? Directionality.maybeOf(context),
       fit: fit,
+      clipBehavior: clipBehavior,
     );
+  }
+
+  @override
+  void updateRenderObject(BuildContext context, RenderMultiHitStack renderObject) {
+    renderObject
+      ..alignment = alignment
+      ..textDirection = textDirection ?? Directionality.maybeOf(context)
+      ..fit = fit
+      ..clipBehavior = clipBehavior;
   }
 }
 
-class CustomRenderStack extends RenderStack {
-  CustomRenderStack({alignment, textDirection, fit, overflow})
-      : super(alignment: alignment, textDirection: textDirection, fit: fit);
+class RenderMultiHitStack extends RenderStack {
+  RenderMultiHitStack({
+    super.children,
+    super.alignment = AlignmentDirectional.topStart,
+    super.textDirection,
+    super.fit = StackFit.loose,
+    super.clipBehavior = Clip.hardEdge,
+  });
 
+  // NOTE MODIFIED FROM [RenderStack.hitTestChildren], i.e. [defaultHitTestChildren]
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    var stackHit = false;
+    // NOTE MODIFIED
+    var childHit = false;
 
-    final children = getChildrenAsList();
-
-    for (var child in children) {
-      final StackParentData childParentData =
-      child.parentData as StackParentData;
-
-      final childHit = result.addWithPaintOffset(
+    RenderBox? child = lastChild;
+    while (child != null) {
+      // The x, y parameters have the top left of the node's box as the origin.
+      final StackParentData childParentData = child.parentData! as StackParentData;
+      final bool isHit = result.addWithPaintOffset(
         offset: childParentData.offset,
         position: position,
         hitTest: (BoxHitTestResult result, Offset transformed) {
           assert(transformed == position - childParentData.offset);
-          return child.hitTest(result, position: transformed);
+          return child!.hitTest(result, position: transformed);
         },
       );
 
-      if (childHit) stackHit = true;
+      // NOTE MODIFIED
+      // if (isHit) return true;
+      childHit |= isHit;
+
+      child = childParentData.previousSibling;
     }
 
-    return stackHit;
+    // NOTE MODIFIED
+    return childHit;
+    // return false;
   }
 }
