@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:snappy_list_view/snappy_list_view.dart';
 
 void main() {
@@ -65,17 +66,18 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: yourContentList.length,
               itemSnapping: true,
               physics: const CustomPageViewScrollPhysics(),
-              overscrollPhysics: const PageOverscrollPhysics(velocityPerOverscroll: 1200),
-              visualisation: ListVisualisation.enlargement(),
+              overscrollPhysics:
+                  const PageOverscrollPhysics(velocityPerOverscroll: 1200),
+              snapAlignment: SnapAlignment.moveAcross(),
+              snapOnItemAlignment: SnapAlignment.moveAcross(),
+              //visualisation: ListVisualisation.enlargement(),
               itemBuilder: (context, index) {
                 final currentSnappyWidget = yourContentList.elementAt(index);
-                return Card(
-                  child: Container(
-                    height: currentSnappyWidget.height,
-                    width: currentSnappyWidget.width,
-                    color: currentSnappyWidget.color,
-                    child: Text("Index: $index"),
-                  ),
+                return Container(
+                  height: currentSnappyWidget.height,
+                  width: currentSnappyWidget.width,
+                  color: currentSnappyWidget.color,
+                  child: Text("Index: $index"),
                 );
               },
               scrollDirection: axis,

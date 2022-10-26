@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:snappy_list_view/src/service/item_size.dart';
 import 'package:snappy_list_view/src/service/list_visualisationHelper.dart';
 import 'package:snappy_list_view/src/service/multi_hit_stack.dart';
+import 'package:snappy_list_view/src/service/snap_alignment_helper.dart';
+import 'package:snappy_list_view/src/snap_alignment.dart';
 
 import '../snappy_list_view.dart';
 import 'service/messure_widget.dart';
@@ -17,6 +20,8 @@ class SnappyListView extends StatefulWidget {
     PageController? controller,
     ListVisualisation? visualisation,
     ItemPositionsListener? itemPositionsListener,
+    SnapAlignment? snapAlignment,
+    SnapAlignment? snapOnItemAlignment,
     required this.itemCount,
     required this.itemBuilder,
     this.scrollBehavior,
@@ -30,13 +35,15 @@ class SnappyListView extends StatefulWidget {
     this.reverse = false,
     this.itemSnapping = false,
     this.onPageChanged,
-    this.centerOffset = 0,
     this.overscrollPhysics,
     this.allowItemSizes = false,
+    this.onPageChange,
   })  : controller = controller ?? PageController(),
         visualisation = visualisation ?? ListVisualisation.normal(),
         itemPositionsListener =
             itemPositionsListener ?? ItemPositionsListener.create(),
+        snapAlignment = snapAlignment ?? SnapAlignment.static(0.5),
+        snapOnItemAlignment = snapOnItemAlignment ?? SnapAlignment.static(0.5),
         super(key: key);
 
   /// A normal controller for PageView or [DynamicPageView].
@@ -116,16 +123,13 @@ class SnappyListView extends StatefulWidget {
   /// See [ScrollablePositionedList.addSemanticIndexes]
   final ItemPositionsListener itemPositionsListener;
 
-  /// Called whenever the page in the center of the viewport changes.
-  final Function(int)? onPageChanged;
+  /// Called whenever the snap point changes. Returns both the new index
+  /// and the size of the current item.
+  final void Function(int index, double size)? onPageChanged;
 
-  /// Take adjustments to the current center of the viewport.
-  /// The value is expected to be within [-0.5 and 0.5], while 0 would be the
-  /// middle of the viewport and -0.5 the beginning of the viewport.
-  ///
-  /// Note that the maximum item height still has to be fully visible, when
-  /// adjusting the center.
-  final double centerOffset;
+  /// Called whenever the position changes (scrolling).
+  /// Returns both the current item and the size of the current item.
+  final void Function(double index, double size)? onPageChange;
 
   ///The parameter to control the overscroll physics when [itemSnapping] is true.
   ///If Null the normal PageView scrolling behavior will be taken.
@@ -145,6 +149,18 @@ class SnappyListView extends StatefulWidget {
   /// will be applied by default
   final bool allowItemSizes;
 
+  /// Controls the percentage position of the snap point in the viewport.
+  /// Meaning if [snapAlignment] is 0, the snap point is at the top/left, while
+  /// 1 would be to the right/bottom based on [scrollDirection]
+  /// Default is SnapAlignment.static(0.5);
+  final SnapAlignment snapAlignment;
+
+  /// Controls the percentage position of the snap point in on each item.
+  /// Meaning if [snapAlignment] is 0, the snap point is at the top/left of the
+  /// item, while 1 would be to the right/bottom based on [scrollDirection]
+  /// Default is SnapAlignment.static(0.5);
+  final SnapAlignment snapOnItemAlignment;
+
   @override
   State<SnappyListView> createState() => _SnappyListViewState();
 }
@@ -153,14 +169,12 @@ class _SnappyListViewState extends State<SnappyListView> {
   final ItemScrollController listController = ItemScrollController();
 
   // * Current scroll parameters
-  List<ItemPosition> currentItems = [];
   late int currentIndex;
-  double currentAlignment = 0.5;
+  double currentAlignment = 0.0;
   late Size viewportSize;
 
-  // * Align correction on startup
-  final Map<int, double> initialSizes = {};
-  bool initialBuild = true;
+  // * Item size tracking
+  final List<ItemSize> internalSizes = [];
 
   @override
   void initState() {
@@ -182,7 +196,6 @@ class _SnappyListViewState extends State<SnappyListView> {
     //sync list after rebuild to adapt for item changes (size or deletion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) syncList();
-      if (initialSizes.isNotEmpty && initialBuild) initialBuild = false;
     });
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -198,8 +211,11 @@ class _SnappyListViewState extends State<SnappyListView> {
               itemScrollController: listController,
               itemPositionsListener: widget.itemPositionsListener,
               initialScrollIndex: currentIndex,
-              initialAlignment:
-                  getAlignment(index: currentIndex, alignmentOnItem: 0.5),
+              initialAlignment: getAlignment(
+                index: currentIndex,
+                alignmentOnItem: widget.snapOnItemAlignment
+                    .apply(assignSnapAlignmentItem(currentIndex)),
+              ),
               itemCount: widget.itemCount,
               physics: const NeverScrollableScrollPhysics(),
               addSemanticIndexes: widget.addSemanticIndexes,
@@ -212,16 +228,18 @@ class _SnappyListViewState extends State<SnappyListView> {
               itemBuilder: (context, index) {
                 return MeasureSize(
                   onChange: (size) {
-                    if (initialBuild || initialSizes.containsKey(index)) {
-                      // As itemPositionsListener is not initialized on startup
-                      // and therefore the size of the initial element
-                      // cannot be calculated -> manual measuring and update
-                      // is required
-                      final update =
-                          isVerticalScroll ? size.height : size.width;
-                      setState(() => initialSizes.update(
-                          index, (value) => update,
-                          ifAbsent: () => update));
+                    // As itemPositionsListener is not initialized on startup
+                    // and only holds elements that are displayed, initial
+                    // element-calculation and smooth scroll cannot be guaranteed
+                    // -> manual measuring and update is required
+                    final update = isVerticalScroll ? size.height : size.width;
+                    final itemIndex = internalSizes
+                        .indexWhere((element) => element.index == index);
+                    if (itemIndex != -1) {
+                      internalSizes[itemIndex] =
+                          ItemSize(index: index, size: update);
+                    } else {
+                      internalSizes.add(ItemSize(index: index, size: update));
                     }
                   },
                   child: widget.allowItemSizes
@@ -279,14 +297,26 @@ class _SnappyListViewState extends State<SnappyListView> {
   /// A listener that adjusts the index and alignment of the listController,
   /// when pageController moves
   void syncValue() {
-    currentItems = widget.itemPositionsListener.itemPositions.value.toList();
     if (widget.controller.hasClients) {
-      if (page.round() != currentIndex && widget.onPageChanged != null) {
-        widget.onPageChanged!(page.round());
+      final relativeSnapPoint = widget.snapOnItemAlignment
+          .apply(assignSnapAlignmentItem(currentIndex));
+      final newIndex =
+          (page + relativeSnapPoint).truncate().clamp(0, widget.itemCount - 1);
+      if (newIndex != currentIndex && widget.onPageChanged != null) {
+        final listItems = widget.itemPositionsListener.itemPositions.value;
+        internalSizes.removeWhere((element) {
+          final keepList = listItems.map((e) => e.index).toList() +
+              [listItems.first.index - 1, listItems.first.index + 1];
+          return keepList.contains(element.index) == false;
+        }); //clears sizes (with buffer for border) to prevent high ram usage
+        widget.onPageChanged!(newIndex, getSize(newIndex));
       }
-      currentIndex = page.round();
-      currentAlignment = (currentIndex - page - 0.5).abs();
+      currentIndex = newIndex;
+      currentAlignment = (currentIndex - page - relativeSnapPoint).abs();
       syncList();
+      if (widget.onPageChange != null) {
+        widget.onPageChange!(page, getSize(currentIndex));
+      }
     }
   }
 
@@ -301,39 +331,54 @@ class _SnappyListViewState extends State<SnappyListView> {
   }) {
     assert(alignmentOnItem >= 0 && alignmentOnItem <= 1,
         "Alignment on item is expected to be within 0 and 1");
-
-    double midPoint = 0.5 + widget.centerOffset / maxScrollDirectionSize;
+    double midPoint =
+        widget.snapAlignment.apply(assignSnapAlignmentItem(index));
     final relativePageSize = getSize(index) / maxScrollDirectionSize;
     if (index == widget.itemCount - 1) {
       //is last?
-      alignmentOnItem = alignmentOnItem.clamp(0.0, 0.5);
+      alignmentOnItem = alignmentOnItem.clamp(0.0,
+          widget.snapOnItemAlignment.apply(assignSnapAlignmentItem(index)));
     } else if (index == 0) {
       //is first?
-      midPoint = relativePageSize / 2;
+      midPoint = relativePageSize *
+          widget.snapOnItemAlignment.apply(assignSnapAlignmentItem(index));
     }
     return midPoint - relativePageSize * alignmentOnItem;
   }
 
-  /// Return the page padding for the first and last page of the list to simulate
+  /// Returns the page padding for the first and last page of the list to simulate
   /// a correct (middle) start/end of the pages
   EdgeInsets getPagePadding() {
-    final firstSize =
-        widget.reverse ? getSize(widget.itemCount - 1) : getSize(0);
-    final lastSize =
-        widget.reverse ? getSize(0) : getSize(widget.itemCount - 1);
-    final firstMidPadding = maxScrollDirectionSize / 2 - firstSize / 2;
-    final lastMidPadding = maxScrollDirectionSize / 2 - lastSize / 2;
+    final firstIndex = widget.reverse ? widget.itemCount - 1 : 0;
+    final lastIndex = widget.reverse ? 0 : widget.itemCount - 1;
+    final firstSnapItem = assignSnapAlignmentItem(firstIndex);
+    final lastSnapItem = assignSnapAlignmentItem(lastIndex);
+    final firstAlign = widget.snapAlignment.apply(firstSnapItem);
+    final lastAlign = widget.snapAlignment.apply(lastSnapItem);
+    final firstItemAlign = widget.snapOnItemAlignment.apply(firstSnapItem);
+    final lastItemAlign = widget.snapOnItemAlignment.apply(lastSnapItem);
+    final firstPadding = maxScrollDirectionSize * firstAlign -
+        firstItemAlign * getSize(firstIndex);
+    final lastPadding = maxScrollDirectionSize * (1 - lastAlign) -
+        (1 - lastItemAlign) * getSize(lastIndex);
+    assert(
+        firstPadding >= 0 && lastPadding >= 0,
+        "Snap- and SnapOnItemAlignment caused border items to overflow. "
+        "Please make sure that snap never pushed items out of the viewport.");
     switch (widget.scrollDirection) {
       case Axis.horizontal:
-        return EdgeInsets.only(
-            left: firstMidPadding + widget.centerOffset,
-            right: lastMidPadding - widget.centerOffset);
+        return EdgeInsets.only(left: firstPadding, right: lastPadding);
       case Axis.vertical:
-        return EdgeInsets.only(
-            top: firstMidPadding + widget.centerOffset,
-            bottom: lastMidPadding - widget.centerOffset);
+        return EdgeInsets.only(top: firstPadding, bottom: lastPadding);
     }
   }
+
+  SnapAlignmentItem assignSnapAlignmentItem(int index) => SnapAlignmentItem(
+        itemIndex: index,
+        currentPage: page,
+        itemSize: getSize(index),
+        itemCount: widget.itemCount,
+      );
 
   bool get isVerticalScroll => widget.scrollDirection == Axis.vertical;
 
@@ -350,21 +395,17 @@ class _SnappyListViewState extends State<SnappyListView> {
 
   /// Retrieves the size of an item by index, while checking for validity of size
   double getSize(int index) {
+    final internalItemIndex =
+        internalSizes.indexWhere((element) => element.index == index);
     //initial element alignment correction
-    if (initialSizes.containsKey(index)) {
-      return initialSizes.entries
-          .singleWhere((element) => element.key == index)
-          .value;
+    if (internalItemIndex != -1) {
+      final itemSize = internalSizes.elementAt(internalItemIndex).size;
+      assert(itemSize <= maxScrollDirectionSize,
+          "The size of each item is limited to the maximum size of the scroll area.");
+      return itemSize;
+    } else {
+      return 0;
     }
-    //calculate element size from relative position
-    final items = currentItems.where((element) => element.index == index);
-    if (items.isEmpty) return 0;
-    final relativeSize =
-        (items.first.itemLeadingEdge - items.first.itemTrailingEdge).abs();
-    double itemSize = maxScrollDirectionSize * relativeSize;
-    assert(itemSize <= maxScrollDirectionSize,
-        "The size of each item is limited to the maximum size of the scroll area.");
-    return itemSize;
   }
 
   ///Build item according to visualisation settings
@@ -373,12 +414,8 @@ class _SnappyListViewState extends State<SnappyListView> {
       VisualisationItem(
         axis: widget.scrollDirection,
         itemIndex: index,
-        builderSizes: currentItems.isNotEmpty
-            ? Map.fromEntries(currentItems.map((e) => MapEntry(
-                e.index,
-                (e.itemLeadingEdge - e.itemTrailingEdge).abs() *
-                    maxScrollDirectionSize)))
-            : initialSizes,
+        builderSizes: Map.fromEntries(
+            internalSizes.map((e) => MapEntry(e.index, e.size))),
         maxScrollDirectionSize: maxScrollDirectionSize,
         orthogonalScrollDirectionSize: orthogonalScrollDirectionSize,
         currentPage: page,

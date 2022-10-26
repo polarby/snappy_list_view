@@ -14,3 +14,9 @@ Hot reload safe for page in main.dart
 - enlargement visualisation
 - some package updates
 - some small corrections
+
+## 0.0.4
+
+- Snap alignment parameters (on item and in viewport) + moveAcross()
+- onPageChange
+- new item size calculation
