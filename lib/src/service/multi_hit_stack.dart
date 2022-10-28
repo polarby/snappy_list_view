@@ -25,7 +25,8 @@ class MultiHitStack extends Stack {
   }
 
   @override
-  void updateRenderObject(BuildContext context, RenderMultiHitStack renderObject) {
+  void updateRenderObject(
+      BuildContext context, RenderMultiHitStack renderObject) {
     renderObject
       ..alignment = alignment
       ..textDirection = textDirection ?? Directionality.maybeOf(context)
@@ -52,7 +53,8 @@ class RenderMultiHitStack extends RenderStack {
     RenderBox? child = lastChild;
     while (child != null) {
       // The x, y parameters have the top left of the node's box as the origin.
-      final StackParentData childParentData = child.parentData! as StackParentData;
+      final StackParentData childParentData =
+          child.parentData! as StackParentData;
       final bool isHit = result.addWithPaintOffset(
         offset: childParentData.offset,
         position: position,

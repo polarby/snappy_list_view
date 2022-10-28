@@ -1,4 +1,3 @@
-
 class ItemSize {
   final int index;
   final double size;

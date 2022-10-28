@@ -6,6 +6,7 @@ import 'package:snappy_list_view/src/service/snap_alignment_helper.dart';
 class SnapAlignment {
   final double Function(SnapAlignmentItem item) _parameters;
 
+  ///Returns a double of where the current snap point is supposed to be
   double apply(SnapAlignmentItem item) => _parameters(item);
 
   ///Creates a static non-changing snap point at given position.

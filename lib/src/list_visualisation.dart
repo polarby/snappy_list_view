@@ -6,6 +6,7 @@ import 'package:snappy_list_view/snappy_list_view.dart';
 
 import 'service/list_visualisationHelper.dart';
 
+///Gives a [SnappyListView] different visualisation methods.
 class ListVisualisation {
   final ListVisualisationParameters Function(VisualisationItem item)
       _parameters;
@@ -13,6 +14,7 @@ class ListVisualisation {
   ListVisualisationParameters apply(VisualisationItem item) =>
       _parameters(item);
 
+  ///Displays all items like a normal list.
   ListVisualisation.normal()
       : _parameters = ((item) => const ListVisualisationParameters());
 
@@ -73,11 +75,66 @@ class ListVisualisation {
           );
         });
 
-/*
-  TODO: const ListVisualisation.carousel([bool display3D = false]);
+  ///Displays items in an [SnappyListView] like a carousel.
+  ///The intensity of depth perception can be configured with [scalePerUnit]
+  ///and the perception of rotation with [wheelPixelRadius] (radius of the
+  ///3d carousel)
+  ListVisualisation.carousel({
+    double scalePerUnit = 400,
+    double wheelPixelRadius = 400,
+  }) : _parameters = ((item) {
+          double scale = 1;
+          double sizeChange = 0;
+          if (item.isInBuilderSizes) {
+            final degrees = 360 /
+                ((2 * pi * wheelPixelRadius) / item.distanceToCurrentPage!);
+            final depth =
+                wheelPixelRadius - cos(degrees * (pi / 180)) * wheelPixelRadius;
+            scale = (1 - depth / scalePerUnit).clamp(0, 1);
+            sizeChange = (1 - scale) * item.orthogonalScrollDirectionSize;
+          }
+          return ListVisualisationParameters(
+            transform: Matrix4Transform()
+                .scale(scale)
+                .translate(
+                  x: item.axis == Axis.vertical ? sizeChange / 2 : 0,
+                  y: item.axis == Axis.horizontal ? sizeChange / 2 : 0,
+                )
+                .matrix4,
+            curve: Curves.linear,
+            duration: const Duration(milliseconds: 0),
+          );
+        });
 
-  TODO: const ListVisualisation.perspective(AxisDirection axis);
- */
+  ///Displays items in an [SnappyListView] with a perception perspective.
+  ///The parameters [rotation] configures how intense the depth perception is
+  ///supposed to be. If the [rotation] is bigger than 0 the perspective is
+  ///shown on the right and if its lower than 0 perspective is on the left side.
+  ///If [rotation] equals 0, no change to the list will be applied.
+  ///The intensity of depth perception can be configured with [scalePerUnit]
+  ListVisualisation.perspective({
+    double rotation = 50,
+    double scalePerUnit = 400,
+    bool warp3d = true,
+  })  : assert(rotation.abs() <= 90),
+        _parameters = ((item) {
+          double scale = 1;
+          if (item.isInBuilderSizes) {
+            final depth =
+                cos((90 - rotation) * (pi / 180)) * item.distanceToCurrentPage!;
+            scale = 1 - depth / scalePerUnit;
+          }
+          return ListVisualisationParameters(
+            transform: Matrix4.rotationY(warp3d ? rotation * (pi / 180) : 0)
+              ..scale(scale),
+            curve: Curves.linear,
+            transformAlignment: Alignment.center,
+            duration: const Duration(milliseconds: 0),
+          );
+        });
 
+  /// Create you own custom visualisation behavior.
+  /// Note: It is appreciated to create a pull request to add your
+  /// behavior to the package.
   ListVisualisation.custom(this._parameters);
 }

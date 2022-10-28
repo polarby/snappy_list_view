@@ -4,7 +4,6 @@ import 'package:snappy_list_view/src/service/item_size.dart';
 import 'package:snappy_list_view/src/service/list_visualisationHelper.dart';
 import 'package:snappy_list_view/src/service/multi_hit_stack.dart';
 import 'package:snappy_list_view/src/service/snap_alignment_helper.dart';
-import 'package:snappy_list_view/src/snap_alignment.dart';
 
 import '../snappy_list_view.dart';
 import 'service/messure_widget.dart';

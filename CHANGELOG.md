@@ -20,3 +20,9 @@ Hot reload safe for page in main.dart
 - Snap alignment parameters (on item and in viewport) + moveAcross()
 - onPageChange
 - new item size calculation
+
+## 0.0.5
+
+- Added ListVisualisation.carousel and ListVisualisation.perspective
+- updated doc
+- cleanup

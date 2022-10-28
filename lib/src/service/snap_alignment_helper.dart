@@ -1,4 +1,3 @@
-
 class SnapAlignmentItem {
   final int itemIndex;
   final double currentPage;
@@ -14,9 +13,7 @@ class SnapAlignmentItem {
 
   bool get isCurrent => pageDifference.abs() <= 0.5;
 
-
   double get pageDifference => itemIndex - currentPage;
 
   bool get isTrailing => pageDifference < 0;
-
 }
