@@ -175,6 +175,8 @@ class _SnappyListViewState extends State<SnappyListView> {
   // * Item size tracking
   final List<ItemSize> internalSizes = [];
 
+  bool initialBuild = true;
+
   @override
   void initState() {
     super.initState();
@@ -195,6 +197,7 @@ class _SnappyListViewState extends State<SnappyListView> {
     //sync list after rebuild to adapt for item changes (size or deletion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) syncList();
+      if (internalSizes.isNotEmpty && initialBuild) initialBuild = false;
     });
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -212,8 +215,11 @@ class _SnappyListViewState extends State<SnappyListView> {
               initialScrollIndex: currentIndex,
               initialAlignment: getAlignment(
                 index: currentIndex,
-                alignmentOnItem: widget.snapOnItemAlignment
-                    .apply(assignSnapAlignmentItem(currentIndex)),
+                alignmentOnItem: getAlignment(
+                  index: currentIndex,
+                  alignmentOnItem: widget.snapOnItemAlignment
+                      .apply(assignSnapAlignmentItem(currentIndex)),
+                ),
               ),
               itemCount: widget.itemCount,
               physics: const NeverScrollableScrollPhysics(),
@@ -227,18 +233,10 @@ class _SnappyListViewState extends State<SnappyListView> {
               itemBuilder: (context, index) {
                 return MeasureSize(
                   onChange: (size) {
-                    // As itemPositionsListener is not initialized on startup
-                    // and only holds elements that are displayed, initial
-                    // element-calculation and smooth scroll cannot be guaranteed
-                    // -> manual measuring and update is required
-                    final update = isVerticalScroll ? size.height : size.width;
-                    final itemIndex = internalSizes
-                        .indexWhere((element) => element.index == index);
-                    if (itemIndex != -1) {
-                      internalSizes[itemIndex] =
-                          ItemSize(index: index, size: update);
+                    if (initialBuild) {
+                      setState(() => updateItemSizeData(index, size));
                     } else {
-                      internalSizes.add(ItemSize(index: index, size: update));
+                      updateItemSizeData(index, size);
                     }
                   },
                   child: widget.allowItemSizes
@@ -404,6 +402,21 @@ class _SnappyListViewState extends State<SnappyListView> {
       return itemSize;
     } else {
       return 0;
+    }
+  }
+
+  void updateItemSizeData(int index, Size size) {
+    // As itemPositionsListener is not initialized on startup
+    // and only holds elements that are displayed, initial
+    // element-calculation and smooth scroll cannot be guaranteed
+    // -> manual measuring and update is required
+    final update = isVerticalScroll ? size.height : size.width;
+    final itemIndex =
+        internalSizes.indexWhere((element) => element.index == index);
+    if (itemIndex != -1) {
+      internalSizes[itemIndex] = ItemSize(index: index, size: update);
+    } else {
+      internalSizes.add(ItemSize(index: index, size: update));
     }
   }
 

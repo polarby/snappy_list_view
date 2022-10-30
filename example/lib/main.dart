@@ -64,13 +64,13 @@ class _MyHomePageState extends State<MyHomePage> {
               reverse: reverse,
               controller: controller,
               itemCount: yourContentList.length,
-              //itemSnapping: true,
+              itemSnapping: true,
               physics: const CustomPageViewScrollPhysics(),
               overscrollPhysics:
                   const PageOverscrollPhysics(velocityPerOverscroll: 1200),
               //snapAlignment: SnapAlignment.moveAcross(),
               //snapOnItemAlignment: SnapAlignment.moveAcross(),
-              visualisation: ListVisualisation.perspective(),
+              //visualisation: ListVisualisation.perspective(),
               itemBuilder: (context, index) {
                 final currentSnappyWidget = yourContentList.elementAt(index);
                 return Container(
