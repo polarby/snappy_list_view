@@ -30,3 +30,7 @@ Hot reload safe for page in main.dart
 ## 0.0.6
 
 - initial alignment debug
+
+## 0.0.7
+
+- initial alignment debug (including initial index + alignment)

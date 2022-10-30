@@ -182,6 +182,8 @@ class _SnappyListViewState extends State<SnappyListView> {
     super.initState();
     currentIndex = widget.controller.initialPage;
     widget.controller.addListener(syncValue);
+    currentAlignment =
+        widget.snapOnItemAlignment.apply(assignSnapAlignmentItem(currentIndex));
   }
 
   @override

@@ -30,7 +30,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final List<YourSnappyWidget> yourContentList =
       List.generate(10, (index) => YourSnappyWidget.random());
 
-  final PageController controller = PageController(initialPage: 0);
+  final PageController controller = PageController(initialPage: 3);
 
   /// Dynamic Settings that you can change in this example
   Axis axis = Axis.horizontal;
@@ -68,8 +68,8 @@ class _MyHomePageState extends State<MyHomePage> {
               physics: const CustomPageViewScrollPhysics(),
               overscrollPhysics:
                   const PageOverscrollPhysics(velocityPerOverscroll: 1200),
-              //snapAlignment: SnapAlignment.moveAcross(),
-              //snapOnItemAlignment: SnapAlignment.moveAcross(),
+              //snapAlignment: SnapAlignment.static(0.5),
+              //snapOnItemAlignment: SnapAlignment.static(0.5),
               //visualisation: ListVisualisation.perspective(),
               itemBuilder: (context, index) {
                 final currentSnappyWidget = yourContentList.elementAt(index);
