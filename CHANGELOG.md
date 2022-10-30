@@ -26,3 +26,7 @@ Hot reload safe for page in main.dart
 - Added ListVisualisation.carousel and ListVisualisation.perspective
 - updated doc
 - cleanup
+
+## 0.0.6
+
+- initial alignment debug
