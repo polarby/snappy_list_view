@@ -34,3 +34,7 @@ Hot reload safe for page in main.dart
 ## 0.0.7
 
 - initial alignment debug (including initial index + alignment)
+
+## 0.0.8
+
+- constraints adjustment bug resolve (if not in focus) 

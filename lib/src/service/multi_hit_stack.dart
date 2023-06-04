@@ -44,10 +44,8 @@ class RenderMultiHitStack extends RenderStack {
     super.clipBehavior = Clip.hardEdge,
   });
 
-  // NOTE MODIFIED FROM [RenderStack.hitTestChildren], i.e. [defaultHitTestChildren]
   @override
   bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
-    // NOTE MODIFIED
     var childHit = false;
 
     RenderBox? child = lastChild;
@@ -64,14 +62,12 @@ class RenderMultiHitStack extends RenderStack {
         },
       );
 
-      // NOTE MODIFIED
       // if (isHit) return true;
       childHit |= isHit;
 
       child = childParentData.previousSibling;
     }
 
-    // NOTE MODIFIED
     return childHit;
     // return false;
   }

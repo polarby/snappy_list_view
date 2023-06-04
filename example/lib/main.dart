@@ -26,20 +26,24 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage>
+    with TickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   final List<YourSnappyWidget> yourContentList =
-      List.generate(10, (index) => YourSnappyWidget.random());
+      List.generate(5, (index) => YourSnappyWidget.random(max: 300, min: 50));
 
-  final PageController controller = PageController(initialPage: 3);
+  final PageController controller = PageController(initialPage: 0);
+  late final TabController tabController;
 
   /// Dynamic Settings that you can change in this example
-  Axis axis = Axis.horizontal;
+  Axis axis = Axis.vertical;
   bool overscrollSnap = false;
   bool reverse = false;
 
   @override
   void initState() {
     controller.addListener(pageListener);
+    tabController = TabController(length: 3, vsync: this);
+
     super.initState();
   }
 
@@ -52,6 +56,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('SnappyListView Demo'),
@@ -66,10 +71,9 @@ class _MyHomePageState extends State<MyHomePage> {
               itemCount: yourContentList.length,
               itemSnapping: true,
               physics: const CustomPageViewScrollPhysics(),
-              overscrollPhysics:
-                  const PageOverscrollPhysics(velocityPerOverscroll: 1200),
-              //snapAlignment: SnapAlignment.static(0.5),
-              //snapOnItemAlignment: SnapAlignment.static(0.5),
+              //overscrollPhysics: const PageOverscrollPhysics(velocityPerOverscroll: 1200),
+              //snapAlignment: SnapAlignment.moveAcross(),
+              //snapOnItemAlignment: SnapAlignment.moveAcross(),
               //visualisation: ListVisualisation.perspective(),
               itemBuilder: (context, index) {
                 final currentSnappyWidget = yourContentList.elementAt(index);
@@ -86,7 +90,7 @@ class _MyHomePageState extends State<MyHomePage> {
           //Expanded(child: Container(color: Colors.blue)),
           Text(
             "CurrentPage: ${controller.hasClients ? currentPage : 0}",
-            style: Theme.of(context).textTheme.headline4,
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           Wrap(
             children: [
@@ -139,6 +143,9 @@ class _MyHomePageState extends State<MyHomePage> {
       : null;
 
   void pageListener() => setState(() {});
+
+  @override
+  bool get wantKeepAlive => true;
 }
 
 class YourSnappyWidget {
@@ -152,9 +159,9 @@ class YourSnappyWidget {
     required this.height,
   });
 
-  YourSnappyWidget.random()
-      : width = Random().nextInt(300).clamp(100, 300).toDouble(),
-        height = Random().nextInt(300).clamp(100, 300).toDouble(),
+  YourSnappyWidget.random({int max = 300, int min = 100})
+      : width = Random().nextInt(max).clamp(min, max).toDouble(),
+        height = Random().nextInt(max).clamp(min, max).toDouble(),
         color =
             Colors.accents.elementAt(Random().nextInt(Colors.accents.length));
 }

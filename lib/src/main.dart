@@ -206,9 +206,10 @@ class _SnappyListViewState extends State<SnappyListView> {
         //only take viewport changes into account if they are in focus
         //-> otherwise it would trigger even when viewport changes are made on
         // other pages, such as in the event of opening the keyboard
-        viewportSize = FocusScope.of(context).hasFocus
-            ? Size(constraints.maxWidth, constraints.maxHeight)
-            : MediaQuery.of(context).size;
+        if (FocusScope.of(context).hasFocus &&
+            (ModalRoute.of(context)?.isCurrent ?? false)) {
+          viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
+        }
         return MultiHitStack(
           children: [
             ScrollablePositionedList.builder(
