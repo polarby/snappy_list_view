@@ -38,3 +38,7 @@ Hot reload safe for page in main.dart
 ## 0.0.8
 
 - constraints adjustment bug resolve (if not in focus) 
+
+## 0.0.9
+
+- viewportSize bug resolve 

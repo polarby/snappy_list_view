@@ -194,22 +194,23 @@ class _SnappyListViewState extends State<SnappyListView> {
 
   @override
   Widget build(BuildContext context) {
-    //adjust currentIndex in case of invalidity due to possible itemCount reduction
-    currentIndex = currentIndex.clamp(0, widget.itemCount);
-    //sync list after rebuild to adapt for item changes (size or deletion)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) syncList();
-      if (internalSizes.isNotEmpty && initialBuild) initialBuild = false;
-    });
     return LayoutBuilder(
       builder: (context, constraints) {
         //only take viewport changes into account if they are in focus
         //-> otherwise it would trigger even when viewport changes are made on
         // other pages, such as in the event of opening the keyboard
         if (FocusScope.of(context).hasFocus &&
-            (ModalRoute.of(context)?.isCurrent ?? false)) {
+                (ModalRoute.of(context)?.isCurrent ?? false) ||
+            initialBuild) {
           viewportSize = Size(constraints.maxWidth, constraints.maxHeight);
         }
+        //adjust currentIndex in case of invalidity due to possible itemCount reduction
+        currentIndex = currentIndex.clamp(0, widget.itemCount);
+        //sync list after rebuild to adapt for item changes (size or deletion)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) syncList();
+          if (internalSizes.isNotEmpty && initialBuild) initialBuild = false;
+        });
         return MultiHitStack(
           children: [
             ScrollablePositionedList.builder(
